@@ -1,8 +1,8 @@
-import styled from '@emotion/styled';
+import styled from "styled-components";
 
-export const AppContainer = styled.div`
+export const AppStyled = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   grid-gap: 16px;
   padding-bottom: 24px;
-`;
+`
