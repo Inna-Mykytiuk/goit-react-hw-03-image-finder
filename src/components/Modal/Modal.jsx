@@ -9,18 +9,25 @@ class Modal extends Component {
     onClose: PropTypes.func.isRequired,
     children: PropTypes.node.isRequired,
   };
+
+  //монтуємо слухача клавіатури
   componentDidMount() {
     window.addEventListener('keydown', this.handelClick);
   }
+
+  //видаляємо слухача клавіатури
   componentWillUnmount() {
     window.removeEventListener('keydown', this.handelClick);
   }
+
+  //функція яка закриває модальне вікно при кліку на кнопку Esc
   handelClick = e => {
     if (e.code === 'Escape') {
       this.props.onClose();
     }
   };
 
+  //функція яка закриває модальне вікно при кліку на бекдроп
   handleClickOnBackdrop = e => {
     if (e.target === e.currentTarget) {
       this.props.onClose();

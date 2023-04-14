@@ -8,13 +8,16 @@ import {
 } from './Searchbar.styled';
 
 class Searchbar extends Component {
+  //встановлюємо початковий стан компонента, умови які будуть змінюватися від рендеру до рендеру
   state = { query: '' };
 
+  //функція яка виконує запит на пошук картинок при введенні запиту
   handleChange = e => {
     const { value } = e.currentTarget;
     this.setState({ query: value });
   };
 
+  //функція яка виконує запит на пошук картинок при кліку на кнопку
   handleSubmit = e => {
     const { query } = this.state;
     e.preventDefault();

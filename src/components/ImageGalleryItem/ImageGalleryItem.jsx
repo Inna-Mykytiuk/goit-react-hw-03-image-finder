@@ -3,7 +3,10 @@ import Modal from 'components/Modal';
 import { ItemContainer, ImageGallery } from './ImageGalleryItem.styled';
 
 class ImageGalleryItem extends Component {
+  //встановлюємо початковий стан компонента, умови які будуть змінюватися від рендеру до рендеру
   state = { showModal: false };
+
+  //функція яка виконує відкриття модального вікна при кліку на картинку
   toggleModal = () => {
     this.setState(({ showModal }) => ({ showModal: !showModal }));
   };
