@@ -38,14 +38,6 @@ export class App extends Component {
             console.log(data.totalHits, data.hits);
             toast.error('There are no images for your request');
           }
-          const results = hits.map(
-            ({ tags, id, webformatURL, largeImageURL }) => ({
-              tags,
-              id,
-              webformatURL,
-              largeImageURL,
-            })
-          );
 
           this.setState(({ images }) => {
             return { images: [...images, ...results], totalHits };
