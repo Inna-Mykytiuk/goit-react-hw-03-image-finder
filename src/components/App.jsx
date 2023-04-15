@@ -23,57 +23,42 @@ export class App extends Component {
   componentDidUpdate(prevProps, prevState) {
     const { query, page } = this.state;
 
-    if (prevState.query !== query) {
-      this.setState(({ isLoading }) => ({ isLoading: !isLoading }));
-      window.scrollTo({ behavior: 'smooth', top: 0 });
-      fetchImages(query)
-        .then(data => {
-          const results = data.hits.map(image => ({
-            tags: image.tags,
-            id: image.id,
-            smallImage: image.webformatURL,
-            largeImage: image.largeImageURL,
-          }));
-          if (!data.totalHits) {
-            console.log(data.totalHits, data.hits);
+    if (prevState.query !== query || prevState.page !== page) {
+      this.setState({ isLoading: true });
+      fetchImages(query, page)
+        .then(({ hits, totalHits }) => {
+          if (!totalHits) {
+            console.log(totalHits, hits);
             toast.error('There are no images for your request');
+            return;
           }
+          const results = hits.map(
+            ({ tags, id, webformatURL, largeImageURL }) => ({
+              tags,
+              id,
+              smallImage: webformatURL,
+              largeImage: largeImageURL,
+            })
+          );
 
           this.setState(({ images }) => {
             return { images: [...images, ...results], totalHits };
           });
         })
-        .catch(error => console.error(error))
-        .finally(() =>
-          this.setState(({ isLoading }) => ({ isLoading: !isLoading }))
-        );
-    }
-
-    if (prevState.page !== page && page !== 1) {
-      this.setState(({ isLoading }) => ({ isLoading: !isLoading }));
-      fetchImages(query, page)
-        .then(data => {
-          const results = data.hits.map(image => ({
-            tags: image.tags,
-            id: image.id,
-            smallImage: image.webformatURL,
-            largeImage: image.largeImageURL,
-          }));
-
-          return this.setState(({ images }) => {
-            return { images: [...images, ...results] };
-          });
+        .catch(error => {
+          toast.error('There are no images for your request');
         })
-        .catch(error => console.error(error))
-        .finally(() =>
-          this.setState(({ isLoading }) => ({ isLoading: !isLoading }))
-        );
+        .finally(() => this.setState({ isLoading: false }));
     }
   }
 
   submitHandler = query => {
+    window.scrollTo({ behavior: 'smooth', top: 0 });
     this.setState({
       query,
+      images: [],
+      page: 1,
+      totalHits: 0,
     });
   };
 
@@ -83,38 +68,24 @@ export class App extends Component {
     }));
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
-  };
-
-  onImageClick = event => {
-    const largeUrl = event.target.dataset.large;
-    const targetAlt = event.target.alt;
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-      activeImage: { largeUrl, targetAlt },
-    }));
+  onImageClick = (activeImage = null) => {
+    this.setState({ activeImage });
   };
 
   render() {
+    const { isLoading, images, totalHits, activeImage } = this.state;
     return (
       <AppStyled>
-        <Searchbar onSubmit={this.submitHandler}></Searchbar>
-        {this.state.isLoading && <Dna wrapperStyle={{ margin: '0 auto' }} />}
-        <ImageGallery
-          images={this.state.images}
-          openModal={this.onImageClick}
-        ></ImageGallery>
-        {this.state.totalHits > this.state.images.length && (
+        <Searchbar onSubmit={this.submitHandler} />
+        <ImageGallery images={images} openModal={this.onImageClick} />
+        {totalHits > images.length && !isLoading && (
           <Button onLoadMoreButton={this.onLoadMoreButton} />
         )}
-        {this.state.showModal && (
-          <Modal
-            image={this.state.activeImage}
-            onClose={this.toggleModal}
-          ></Modal>
+        {isLoading && <Dna wrapperStyle={{ margin: '0 auto' }} />}
+        {activeImage && (
+          <Modal image={activeImage} onClose={this.onImageClick}></Modal>
         )}
-        <ToastContainer></ToastContainer>
+        <ToastContainer />
       </AppStyled>
     );
   }
