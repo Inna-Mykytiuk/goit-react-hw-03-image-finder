@@ -16,48 +16,65 @@ export class App extends Component {
     page: 1,
     isLoading: false,
     totalHits: 0,
+    showModal: false,
     activeImage: null,
   };
 
   componentDidUpdate(prevProps, prevState) {
     const { query, page } = this.state;
 
-    if (prevState.query !== query || prevState.page !== page) {
-      this.setState({ isLoading: true });
-      fetchImages(query, page)
-        .then(({ hits, totalHits }) => {
-          if (!totalHits) {
-            console.log(totalHits, hits);
+    if (prevState.query !== query) {
+      this.setState(({ isLoading }) => ({ isLoading: !isLoading }));
+      window.scrollTo({ behavior: 'smooth', top: 0 });
+      fetchImages(query)
+        .then(data => {
+          const results = data.hits.map(image => ({
+            tags: image.tags,
+            id: image.id,
+            smallImage: image.webformatURL,
+            largeImage: image.largeImageURL,
+          }));
+          if (!data.totalHits) {
+            console.log(data.totalHits, data.hits);
             toast.error('There are no images for your request');
-            return;
           }
-          const results = hits.map(
-            ({ tags, id, webformatURL, largeImageURL }) => ({
-              tags,
-              id,
-              webformatURL,
-              largeImageURL,
-            })
-          );
-
-          this.setState(({ images }) => {
-            return { images: [...images, ...results], totalHits };
+          return this.setState({
+            page: 1,
+            images: results,
+            totalHits: data.totalHits,
           });
         })
-        .catch(error => {
-          toast.error('There are no images for your request');
+        .catch(error => console.error(error))
+        .finally(() =>
+          this.setState(({ isLoading }) => ({ isLoading: !isLoading }))
+        );
+    }
+
+    if (prevState.page !== page && page !== 1) {
+      this.setState(({ isLoading }) => ({ isLoading: !isLoading }));
+      fetchImages(query, page)
+        .then(data => {
+          const results = data.hits.map(image => ({
+            tags: image.tags,
+            id: image.id,
+            smallImage: image.webformatURL,
+            largeImage: image.largeImageURL,
+          }));
+
+          return this.setState(({ images }) => {
+            return { images: [...images, ...results] };
+          });
         })
-        .finally(() => this.setState({ isLoading: false }));
+        .catch(error => console.error(error))
+        .finally(() =>
+          this.setState(({ isLoading }) => ({ isLoading: !isLoading }))
+        );
     }
   }
 
   submitHandler = query => {
-    window.scrollTo({ behavior: 'smooth', top: 0 });
     this.setState({
       query,
-      images: [],
-      page: 1,
-      totalHits: 0,
     });
   };
 
@@ -67,26 +84,38 @@ export class App extends Component {
     }));
   };
 
-  onImageClick = (activeImage = null) => {
+  toggleModal = () => {
+    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  };
+
+  onImageClick = event => {
+    const largeUrl = event.target.dataset.large;
+    const targetAlt = event.target.alt;
     this.setState(({ showModal }) => ({
-      activeImage,
+      showModal: !showModal,
+      activeImage: { largeUrl, targetAlt },
     }));
   };
 
   render() {
-    const { isLoading, images, totalHits, activeImage } = this.state;
     return (
       <AppStyled>
-        <Searchbar onSubmit={this.submitHandler} />
-        <ImageGallery images={images} openModal={this.onImageClick} />
-        {totalHits > images.length && !isLoading && (
+        <Searchbar onSubmit={this.submitHandler}></Searchbar>
+        {this.state.isLoading && <Dna wrapperStyle={{ margin: '0 auto' }} />}
+        <ImageGallery
+          images={this.state.images}
+          openModal={this.onImageClick}
+        ></ImageGallery>
+        {this.state.totalHits > this.state.images.length && (
           <Button onLoadMoreButton={this.onLoadMoreButton} />
         )}
-        {isLoading && <Dna wrapperStyle={{ margin: '0 auto' }} />}
-        {activeImage && (
-          <Modal image={activeImage} onClose={this.onImageClick}></Modal>
+        {this.state.showModal && (
+          <Modal
+            image={this.state.activeImage}
+            onClose={this.toggleModal}
+          ></Modal>
         )}
-        <ToastContainer />
+        <ToastContainer></ToastContainer>
       </AppStyled>
     );
   }
