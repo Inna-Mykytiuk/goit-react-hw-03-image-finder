@@ -35,8 +35,8 @@ export class App extends Component {
             ({ tags, id, webformatURL, largeImageURL }) => ({
               tags,
               id,
-              webformatURL,
-              largeImageURL,
+              smallImage: webformatURL,
+              largeImage: largeImageURL,
             })
           );
 
